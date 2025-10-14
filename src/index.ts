@@ -1,7 +1,7 @@
 #!/usr/bin/env bun
 
 import { Command } from "commander";
-import { initCommand, organizeCommand } from "./commands";
+import { initCommand, organizeCommand, undoCommand } from "./commands";
 import { CONFIG_FILE_NAMES } from "./config";
 
 // Initialize the command-line interface using Commander.js
@@ -17,6 +17,11 @@ program
   .command("init")
   .description(`Create a default ${CONFIG_FILE_NAMES[0]} file`)
   .action(initCommand);
+
+program
+  .command("undo")
+  .description("Revert the last organization operation")
+  .action(undoCommand);
 
 program
   .command("organize", { isDefault: true })

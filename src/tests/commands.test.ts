@@ -4,7 +4,7 @@
 import { afterEach, beforeEach, describe, expect, it, spyOn } from "bun:test";
 import { promises as fs } from "fs";
 import { join } from "path";
-import { organizeCommand } from "../commands";
+import { organizeCommand, undoCommand } from "../commands";
 import * as config from "../config"; // Import the module to spy on it
 
 describe("organizeCommand", () => {
@@ -174,5 +174,40 @@ describe("organizeCommand", () => {
     expect(await fs.exists(alreadyOrganizedFile)).toBe(true);
     const reportContent = await fs.readFile(alreadyOrganizedFile, "utf-8");
     expect(reportContent).toBe("report data");
+  });
+
+  it("should correctly undo a previous organization operation", async () => {
+    // --- Setup: Create initial files ---
+    const imagePath = join(TEST_DIR, "image.png");
+    const docPath = join(TEST_DIR, "document.pdf");
+    await fs.writeFile(imagePath, "");
+    await fs.writeFile(docPath, "");
+
+    // --- 1. Organize ---
+    await organizeCommand(TEST_DIR, {});
+
+    // --- Assert organization happened ---
+    const organizedImagePath = join(TEST_DIR, "media/images", "image.png");
+    const organizedDocPath = join(TEST_DIR, "documents", "document.pdf");
+    const undoLogPath = join(process.cwd(), ".bundir-undo.log");
+
+    expect(await fs.exists(organizedImagePath)).toBe(true);
+    expect(await fs.exists(organizedDocPath)).toBe(true);
+    expect(await fs.exists(undoLogPath)).toBe(true); // Undo log must be created
+
+    // --- 2. Undo ---
+    await undoCommand();
+
+    // --- Assert undo happened ---
+    // Original files should be restored
+    expect(await fs.exists(imagePath)).toBe(true);
+    expect(await fs.exists(docPath)).toBe(true);
+
+    // Organized files should be gone
+    expect(await fs.exists(organizedImagePath)).toBe(false);
+    expect(await fs.exists(organizedDocPath)).toBe(false);
+
+    // Undo log should be deleted
+    expect(await fs.exists(undoLogPath)).toBe(false);
   });
 });
