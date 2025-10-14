@@ -4,6 +4,9 @@
 # Test artifacts
 /test-workspace/
 
+# App-generated files
+.bundir-undo.log
+
 # OS-generated files
 .DS_Store
 .DS_Store?
