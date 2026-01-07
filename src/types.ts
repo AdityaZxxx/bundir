@@ -1,4 +1,3 @@
-
 // Configuration interface for the file organizer
 export interface OrganizerConfig {
   options: {

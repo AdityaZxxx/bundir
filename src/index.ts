@@ -2,26 +2,17 @@
 
 import { Command } from "commander";
 import { initCommand, organizeCommand, undoCommand } from "./commands";
-import { CONFIG_FILE_NAMES } from "./config";
+import { CONFIG_FILE_NAME } from "./config";
 
 // Initialize the command-line interface using Commander.js
 
 const program = new Command();
 
-program
-  .name("bundir")
-  .description("Organize files with Bun in a directory by type")
-  .version("1.1.0");
+program.name("bundir").description("Organize files with Bun in a directory by type").version("1.1.0");
 
-program
-  .command("init")
-  .description(`Create a default ${CONFIG_FILE_NAMES[0]} file`)
-  .action(initCommand);
+program.command("init").description(`Create a default ${CONFIG_FILE_NAME[0]} file`).action(initCommand);
 
-program
-  .command("undo")
-  .description("Revert the last organization operation")
-  .action(undoCommand);
+program.command("undo").description("Revert the last organization operation").action(undoCommand);
 
 program
   .command("organize", { isDefault: true })
@@ -30,14 +21,8 @@ program
   .option("--dry-run [boolean]", "Simulate organization without moving files")
   .option("--verbose [boolean]", "Enable detailed logging")
   .option("--ignore-hidden [boolean]", "Ignore hidden files")
-  .option(
-    "--default-category <name>",
-    "Default category for uncategorized files"
-  )
-  .option(
-    "--conflict-resolution <mode>",
-    "Conflict resolution mode: skip, overwrite, or rename"
-  )
+  .option("--default-category <name>", "Default category for uncategorized files")
+  .option("--conflict-resolution <mode>", "Conflict resolution mode: skip, overwrite, or rename")
   .option("-r, --recursive", "Organize files in subdirectories recursively")
   .action(organizeCommand);
 

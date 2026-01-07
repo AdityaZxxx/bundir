@@ -1,0 +1,13 @@
+# Dependencies
+node_modules
+
+# Test artifacts
+test-workspace
+
+# Logs
+*.log
+.bundir-undo.log
+
+# Build output
+dist
+build

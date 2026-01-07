@@ -16,7 +16,7 @@ describe("organizeCommand", () => {
     await fs.mkdir(TEST_DIR, { recursive: true });
 
     // 2. Spy on loadConfig and mock its implementation for every test
-    spyOn(config, "loadConfig").mockImplementation(async (cliOptions: any) => {
+    spyOn(config, "loadConfig").mockImplementation(async (cliOptions: Partial<OrganizerConfig["options"]>) => {
       return {
         ...config.DEFAULT_CONFIG,
         options: { ...config.DEFAULT_CONFIG.options, ...cliOptions },

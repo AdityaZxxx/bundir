@@ -1,11 +1,20 @@
 import { promises as fs } from "fs";
-import { join, extname, parse, resolve } from "path";
-import { loadConfig, createExtensionMap, DEFAULT_CONFIG, CONFIG_FILE_NAMES } from "./config";
+import { extname, join, parse, resolve } from "path";
+import { CONFIG_FILE_NAME, createExtensionMap, DEFAULT_CONFIG, loadConfig } from "./config";
 import type { OrganizerConfig } from "./types";
 
-
 /**
- * Checks if a file exists at a given path.
+ * Checks if a file or directory exists at the specified path.
+ *
+ * @param path - The absolute or relative path to check for existence.
+ * @returns A promise that resolves to `true` if the path exists, `false` otherwise.
+ *
+ * @example
+ * ```ts
+ * if (await fileExists("/path/to/file.txt")) {
+ *   console.log("File exists");
+ * }
+ * ```
  */
 async function fileExists(path: string): Promise<boolean> {
   try {
@@ -17,7 +26,17 @@ async function fileExists(path: string): Promise<boolean> {
 }
 
 /**
- * Recursively walks a directory and returns a flat list of all file paths.
+ * Recursively walks through a directory and returns a flat list of all file paths.
+ *
+ * @param dirPath - The absolute or relative path to the directory to scan.
+ * @returns A promise that resolves to an array of file paths found in the directory tree.
+ *          Returns an empty array if the directory cannot be read.
+ *
+ * @example
+ * ```ts
+ * const files = await getAllFilePaths("/home/user/documents");
+ * console.log(files); // ["/home/user/documents/file1.txt", "/home/user/documents/subfolder/file2.pdf"]
+ * ```
  */
 async function getAllFilePaths(dirPath: string): Promise<string[]> {
   let filePaths: string[] = [];
@@ -31,28 +50,64 @@ async function getAllFilePaths(dirPath: string): Promise<string[]> {
         filePaths.push(fullPath);
       }
     }
-  } catch (error: any) {
-    console.error(`❌ Could not read directory ${dirPath}: ${error.message}`);
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    console.error(`[ERROR] Could not read directory ${dirPath}: ${errorMessage}`);
   }
   return filePaths;
 }
 
 /**
- * Action for the 'init' command. Creates a default config file.
+ * Initializes a new configuration file in the current working directory.
+ * Creates a default `.bundir.json` file if one does not already exist.
+ *
+ * @throws Error if unable to write configuration file to disk.
+ *
+ * @example
+ * ```bash
+ * bundir init
+ * # Output: Created default config file at /current/directory/.bundir.json
+ * ```
  */
 export async function initCommand() {
-  const configPath = join(process.cwd(), CONFIG_FILE_NAMES[0]!);
+  const configPath = join(process.cwd(), CONFIG_FILE_NAME[0]!);
   try {
     await fs.access(configPath);
-    console.log(`⚠️ Config file already exists at ${configPath}.`);
+    console.log(`[WARN] Config file already exists at ${configPath}.`);
   } catch {
     await fs.writeFile(configPath, JSON.stringify(DEFAULT_CONFIG, null, 2));
-    console.log(`✅ Created default config file at ${configPath}`);
+    console.log(`[OK] Created default config file at ${configPath}`);
   }
 }
 
 /**
- * Action for the 'organize' command.
+ * Organizes files in a directory based on their extensions and configuration rules.
+ *
+ * Scans the specified directory and moves files into appropriate subdirectories based on
+ * their file extensions. Supports recursive scanning, conflict resolution, and dry-run mode.
+ *
+ * @param path - The target directory path to organize. Defaults to current directory if not specified.
+ * @param cliOptions - Optional CLI options to override configuration. Can include:
+ *                    - `dryRun`: If true, simulate organization without making changes
+ *                    - `verbose`: If true, display detailed logging for each operation
+ *                    - `ignoreHidden`: If true, skip files starting with a dot
+ *                    - `defaultCategory`: Category name for files with unrecognized extensions
+ *                    - `conflictResolution`: Strategy for handling filename conflicts ("skip", "overwrite", "rename")
+ *                    - `recursive`: If true, scan subdirectories recursively
+ *
+ * @throws Error if unable to read directory or write undo log file.
+ *
+ * @example
+ * ```bash
+ * # Organize current directory
+ * bundir organize
+ *
+ * # Organize specific directory with options
+ * bundir organize ~/Downloads --recursive --verbose
+ *
+ * # Preview changes without moving files
+ * bundir organize --dry-run
+ * ```
  */
 export async function organizeCommand(path: string, cliOptions: Partial<OrganizerConfig["options"]>) {
   const startTime = Date.now();
@@ -77,7 +132,7 @@ export async function organizeCommand(path: string, cliOptions: Partial<Organize
 
   console.log(`Starting directory organization in ${absoluteBasePath}... ${recursive ? "(Recursive Mode)" : ""}`);
   if (dryRun) {
-    console.log("🧪 Running in dry-run mode. No files will be moved.");
+    console.log("[TEST] Running in dry-run mode. No files will be moved.");
   }
 
   try {
@@ -86,7 +141,7 @@ export async function organizeCommand(path: string, cliOptions: Partial<Organize
       filesToProcess = await getAllFilePaths(absoluteBasePath);
     } else {
       const files = await fs.readdir(absoluteBasePath);
-      filesToProcess = files.map(file => join(absoluteBasePath, file));
+      filesToProcess = files.map((file) => join(absoluteBasePath, file));
     }
 
     for (const filePath of filesToProcess) {
@@ -124,13 +179,13 @@ export async function organizeCommand(path: string, cliOptions: Partial<Organize
             if (conflictResolution === "skip") {
               stats.conflictsSkipped++;
               if (verbose) {
-                console.log(`⚠️ [skip] ${file} already exists in ${targetDirName}.`);
+                console.log(`[WARN] [skip] ${file} already exists in ${targetDirName}.`);
               }
               continue;
             } else if (conflictResolution === "overwrite") {
               stats.conflictsOverwritten++;
               if (verbose) {
-                console.log(`💥 [overwrite] ${file} in ${targetDirName}.`);
+                console.log(`[OVERWRITE] ${file} in ${targetDirName}.`);
               }
               await fs.rename(filePath, newFilePath);
               moves.push({ from: filePath, to: newFilePath });
@@ -140,14 +195,14 @@ export async function organizeCommand(path: string, cliOptions: Partial<Organize
               let counter = 1;
               let renamedFilePath;
               const { dir, name, ext } = parse(newFilePath);
-              
+
               do {
                 renamedFilePath = join(dir, `${name} (${counter})${ext}`);
                 counter++;
               } while (await fileExists(renamedFilePath));
 
               if (verbose) {
-                console.log(`✍️ [rename] ${file} to ${parse(renamedFilePath).base}`);
+                console.log(`[RENAME] ${file} to ${parse(renamedFilePath).base}`);
               }
               await fs.rename(filePath, renamedFilePath);
               moves.push({ from: filePath, to: renamedFilePath });
@@ -157,27 +212,29 @@ export async function organizeCommand(path: string, cliOptions: Partial<Organize
         }
 
         if (verbose) {
-          console.log(
-            `${dryRun ? "🧪 [dry-run]" : "📁"} ${file} → ${targetDirName}`
-          );
+          console.log(`${dryRun ? "[TEST] [dry-run]" : "[MOVE]"} ${file} → ${targetDirName}`);
         }
-      } catch (fileError: any) {
+      } catch (fileError: unknown) {
         stats.errors++;
-        console.error(`❌ Error processing file ${file}:`, fileError.message);
+        const errorMessage = fileError instanceof Error ? fileError.message : String(fileError);
+        console.error(`[ERROR] Error processing file ${file}:`, errorMessage);
       }
     }
-  } catch (dirError: any) {
+  } catch (dirError: unknown) {
     stats.errors++;
-    console.error(`❌ Failed to read directory ${path}:`, dirError.message);
+    const errorMessage = dirError instanceof Error ? dirError.message : String(dirError);
+    console.error(`[ERROR] Failed to read directory ${path}:`, errorMessage);
   }
 
   const duration = (Date.now() - startTime) / 1000;
-  console.log("\n✨ Organization Complete! ✨");
+  console.log("\nOrganization Complete!");
   console.log("-------------------------");
-  console.log(`Processed:    ${stats.filesProcessed} files`);
+  console.log(`Processed:      ${stats.filesProcessed} files`);
   console.log(`Moved:          ${stats.filesMoved} files`);
   console.log(`Dirs created:   ${stats.directoriesCreated}`);
-  console.log(`Conflicts:      ${stats.conflictsSkipped} skipped, ${stats.conflictsOverwritten} overwritten, ${stats.conflictsRenamed} renamed`);
+  console.log(
+    `Conflicts:      ${stats.conflictsSkipped} skipped, ${stats.conflictsOverwritten} overwritten, ${stats.conflictsRenamed} renamed`
+  );
   console.log(`Errors:         ${stats.errors}`);
   console.log(`Time taken:     ${duration.toFixed(2)}s`);
   console.log("-------------------------");
@@ -187,16 +244,30 @@ export async function organizeCommand(path: string, cliOptions: Partial<Organize
       const undoLogPath = join(process.cwd(), ".bundir-undo.log");
       await fs.writeFile(undoLogPath, JSON.stringify(moves, null, 2));
       if (verbose) {
-        console.log(`ℹ️ Undo log saved to ${undoLogPath}`);
+        console.log(`[INFO] Undo log saved to ${undoLogPath}`);
       }
-    } catch (error: any) {
-      console.error("❌ Could not write undo log:", error.message);
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      console.error("[ERROR] Could not write undo log:", errorMessage);
     }
   }
 }
 
 /**
- * Action for the 'undo' command. Reverts the last organization.
+ * Reverts the most recent file organization operation.
+ *
+ * Reads the `.bundir-undo.log` file created by the last organization command
+ * and moves all files back to their original locations. The undo log file is
+ * deleted after successful completion.
+ *
+ * @throws Error if unable to read undo log file or move files.
+ *
+ * @example
+ * ```bash
+ * bundir undo
+ * # Output: Found 5 moves to revert. Starting undo...
+ * #         Undo complete. 5 files moved back.
+ * ```
  */
 export async function undoCommand() {
   const undoLogPath = join(process.cwd(), ".bundir-undo.log");
@@ -206,7 +277,7 @@ export async function undoCommand() {
     const moves: { from: string; to: string }[] = JSON.parse(logData);
 
     if (!Array.isArray(moves) || moves.length === 0) {
-      console.log("ℹ️ Undo log is empty or invalid. Nothing to do.");
+      console.log("[INFO] Undo log is empty or invalid. Nothing to do.");
       return;
     }
 
@@ -219,25 +290,26 @@ export async function undoCommand() {
         // Ensure the destination directory exists before moving the file back
         const originalDir = parse(move.from).dir;
         await fs.mkdir(originalDir, { recursive: true });
-        
+
         await fs.rename(move.to, move.from);
-        console.log(`⏪ ${parse(move.to).base} → ${originalDir}`);
+        console.log(`[UNDO] ${parse(move.to).base} → ${originalDir}`);
         revertedCount++;
-      } catch (error: any) {
-        console.error(`❌ Could not revert move for ${parse(move.to).base}: ${error.message}`);
+      } catch (error: unknown) {
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        console.error(`[ERROR] Could not revert move for ${parse(move.to).base}: ${errorMessage}`);
       }
     }
 
     // Clean up the undo log after a successful operation
     await fs.unlink(undoLogPath);
 
-    console.log(`\n✨ Undo complete. ${revertedCount} files moved back.`);
-
-  } catch (error: any) {
-    if (error.code === 'ENOENT') {
-      console.log("ℹ️ No undo log found. Nothing to revert.");
+    console.log(`\nUndo complete. ${revertedCount} files moved back.`);
+  } catch (error: unknown) {
+    if (error instanceof Error && "code" in error && error.code === "ENOENT") {
+      console.log("[INFO] No undo log found. Nothing to revert.");
     } else {
-      console.error("❌ An error occurred during the undo operation:", error.message);
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      console.error("[ERROR] An error occurred during the undo operation:", errorMessage);
     }
   }
 }
