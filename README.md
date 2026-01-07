@@ -6,13 +6,12 @@ A simple yet powerful CLI tool to organize files in a directory based on their t
 
 ## Features
 
-- **Customizable Organization**: Define your own categories and rules in a `.bundir.json` file.
-- **Recursive Mode**: Clean up not just one directory, but all of its subdirectories with a single command.
-- **Conflict Resolution**: Choose how to handle files with the same name: `skip`, `overwrite`, or `rename`.
-- **Undo Last Operation**: Safely revert the last organization with the `bundir undo` command.
-- **Dry Run Mode**: See what changes will be made without actually moving any files.
-- **Flexible Configuration**: Use a global `~/.bundir.json` for default settings and a local `.bundir.json` for project-specific rules.
-- **Built with Bun**: Fast and efficient, written in TypeScript.
+- **Customizable Organization**: Define your own categories and rules in a `.bundir.json` file
+- **Recursive Mode**: Clean up not just one directory, but all of its subdirectories
+- **Conflict Resolution**: Choose how to handle files with the same name: `skip`, `overwrite`, or `rename`
+- **Undo Last Operation**: Safely revert the last organization with the `bundir undo` command
+- **Dry Run Mode**: See what changes will be made without actually moving any files
+- **Flexible Configuration**: Use a global `~/.bundir.json` for default settings and a local `.bundir.json` for project-specific rules
 
 ## Installation
 
@@ -118,9 +117,4 @@ Here is an example configuration:
 
   ```bash
   bun test
-  ```
-
-- **Type-check the project:**
-  ```bash
-  tsc
   ```
