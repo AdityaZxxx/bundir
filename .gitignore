@@ -4,6 +4,9 @@
 # Test artifacts
 /test-workspace/
 
+# Build artifacts
+/dist/
+
 # App-generated files
 .bundir-undo.log
 

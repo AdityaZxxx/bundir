@@ -1,17 +1,42 @@
 {
   "name": "bundir",
+  "version": "1.1.0",
+  "description": "A CLI tool to organize files in a directory based on their type",
   "module": "src/index.ts",
   "type": "module",
+  "main": "./dist/index.js",
+  "bin": {
+    "bundir": "./dist/index.js"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
   "scripts": {
     "start": "bun src/index.ts",
+    "build": "tsc",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "lint": "eslint . --ext .ts",
     "lint:fix": "eslint . --ext .ts --fix",
     "prepare": "husky",
+    "prepublishOnly": "bun run build",
     "test": "bun test"
   },
-  "private": true,
+  "keywords": [
+    "cli",
+    "file",
+    "organize",
+    "bundler",
+    "directory",
+    "cleanup",
+    "files",
+    "sort"
+  ],
+  "author": "",
+  "license": "MIT",
+  "private": false,
   "devDependencies": {
     "@types/bun": "latest",
     "prettier": "^3.6.2",
@@ -25,8 +50,5 @@
   },
   "dependencies": {
     "commander": "^14.0.1"
-  },
-  "bin": {
-    "bundir": "./src/index.ts"
   }
 }

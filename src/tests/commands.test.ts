@@ -6,6 +6,7 @@ import { promises as fs } from "fs";
 import { join } from "path";
 import { organizeCommand, undoCommand } from "../commands";
 import * as config from "../config"; // Import the module to spy on it
+import type { OrganizerConfig } from "../types";
 
 describe("organizeCommand", () => {
   const TEST_DIR = join(process.cwd(), "test-workspace");

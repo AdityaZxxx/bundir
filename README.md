@@ -15,11 +15,33 @@ A simple yet powerful CLI tool to organize files in a directory based on their t
 
 ## Installation
 
-1.  Clone this repository.
-2.  Install dependencies using Bun:
-    ```bash
-    bun install
-    ```
+### From Source
+
+1. Clone this repository.
+2. Install dependencies using Bun:
+   ```bash
+   bun install
+   ```
+3. Build the project:
+   ```bash
+   bun run build
+   ```
+4. Link globally for easy access:
+   ```bash
+   bun link
+   ```
+
+### From npm
+
+```bash
+npm install -g bundir
+```
+
+Then use directly:
+
+```bash
+bundir organize
+```
 
 ## Usage
 
