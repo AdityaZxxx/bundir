@@ -16,7 +16,7 @@
 
 ### Documentation
 
-- [ ] Add LICENSE file (MIT)
+- [x] Add LICENSE file (MIT)
 - [ ] Add CONTRIBUTING.md
 - [ ] Add GitHub badges to README (build status, version, license)
 - [ ] Add examples section to README with screenshots
