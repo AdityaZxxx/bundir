@@ -24,10 +24,10 @@
 
 ### Project Setup
 
-- [ ] Add build script for publishing to npm
+- [x] Add build script for publishing to npm
 - [ ] Set up GitHub Actions CI/CD pipeline
 - [ ] Configure automated releases
-- [ ] Add npx install instructions
+- [x] Add npx install instructions
 
 ### Testing
 
