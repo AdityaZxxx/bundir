@@ -17,12 +17,68 @@ export const DEFAULT_CONFIG: OrganizerConfig = {
   },
   categories: {
     images: {
-      extensions: [".png", ".jpg", ".jpeg", ".gif", ".svg", ".webp"],
+      extensions: [".png", ".jpg", ".jpeg", ".gif", ".svg", ".webp", ".bmp", ".ico", ".avif"],
       targetDir: "media/images",
     },
+    videos: {
+      extensions: [".mp4", ".mkv", ".mov", ".avi", ".wmv", ".flv", ".webm", ".m4v"],
+      targetDir: "media/videos",
+    },
+    audio: {
+      extensions: [".mp3", ".wav", ".ogg", ".flac", ".aac", ".wma", ".m4a", ".opus"],
+      targetDir: "media/audio",
+    },
     documents: {
-      extensions: [".pdf", ".docx", ".txt", ".md"],
+      extensions: [".pdf", ".docx", ".txt", ".md", ".odt", ".rtf", ".log"],
       targetDir: "documents",
+    },
+    spreadsheets: {
+      extensions: [".xlsx", ".xls", ".csv", ".ods"],
+      targetDir: "data/spreadsheets",
+    },
+    presentations: {
+      extensions: [".ppt", ".pptx", ".key", ".odp", ".pps"],
+      targetDir: "presentations",
+    },
+    archives: {
+      extensions: [".zip", ".rar", ".tar", ".gz", ".7z", ".bz2", ".xz", ".zst", ".tgz", ".cab"],
+      targetDir: "archives",
+    },
+    scripts: {
+      extensions: [".js", ".ts", ".py", ".sh", ".rb", ".php", ".pl", ".swift"],
+      targetDir: "code/scripts",
+    },
+    executables: {
+      extensions: [".deb", ".rpm", ".AppImage", ".exe", ".msi", ".dmg", ".apk", ".pkg", ".run"],
+      targetDir: "executables",
+    },
+    configs: {
+      extensions: [".json", ".yaml", ".yml", ".toml", ".ini", ".env", ".cfg"],
+      targetDir: "configs",
+    },
+    design: {
+      extensions: [".fig", ".psd", ".ai", ".xd", ".sketch"],
+      targetDir: "design",
+    },
+    ebooks: {
+      extensions: [".epub", ".mobi", ".azw3", ".cbr", ".cbz"],
+      targetDir: "ebooks",
+    },
+    fonts: {
+      extensions: [".ttf", ".otf", ".woff", ".woff2", ".eot"],
+      targetDir: "fonts",
+    },
+    discs: {
+      extensions: [".iso", ".img", ".vcd", ".nrg"],
+      targetDir: "discs",
+    },
+    databases: {
+      extensions: [".sql", ".sqlite", ".db", ".sqlite3"],
+      targetDir: "data/databases",
+    },
+    certificates: {
+      extensions: [".pem", ".crt", ".cert", ".p12", ".pfx"],
+      targetDir: "certificates",
     },
   },
 };
