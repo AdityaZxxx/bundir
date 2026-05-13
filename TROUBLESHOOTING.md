@@ -82,5 +82,5 @@ If a CLI flag is set, it overrides the config file.
 
 ## Getting Help
 
-- Open an issue on [GitHub](https://github.com/your-username/bundir/issues)
+- Open an issue on [GitHub](https://github.com/AdityaZxxx/bundir/issues)
 - Include: OS, bun/node version, `.bundir.json` (redact secrets), and the exact command you ran
