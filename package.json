@@ -4,9 +4,9 @@
   "description": "A CLI tool to organize files in a directory based on their type",
   "module": "src/index.ts",
   "type": "module",
-  "main": "./dist/index.js",
+  "main": "dist/index.js",
   "bin": {
-    "bundir": "./dist/index.js"
+    "bundir": "dist/index.js"
   },
   "files": [
     "dist",
