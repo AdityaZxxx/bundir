@@ -35,7 +35,7 @@ async function readConfigFile(path: string): Promise<Partial<OrganizerConfig> | 
   try {
     const configData = await file.text();
     const parsed = JSON.parse(configData);
-    if (parsed && typeof parsed === "object") {
+    if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
       validateConfigShape(parsed, path);
     }
     return parsed;

@@ -20,10 +20,6 @@ export class ConfigError extends BundirError {
       "CONFIG_INVALID_JSON"
     );
   }
-
-  static missingField(path: string, field: string): ConfigError {
-    return new ConfigError(`Config at ${path} is missing required field '${field}'.`, "CONFIG_MISSING_FIELD");
-  }
 }
 
 export class FileSystemError extends BundirError {
@@ -43,33 +39,9 @@ export class FileSystemError extends BundirError {
       "FS_NOT_FOUND"
     );
   }
-
-  static permissionDenied(path: string, operation: string): FileSystemError {
-    return new FileSystemError(
-      `Permission denied ${operation} ${path}. Check file permissions.`,
-      path,
-      "FS_PERMISSION_DENIED"
-    );
-  }
-
-  static accessError(path: string, operation: string, detail: string): FileSystemError {
-    return new FileSystemError(`Cannot ${operation} ${path}: ${detail}`, path, "FS_ACCESS_ERROR");
-  }
 }
 
-export class OrganizeError extends BundirError {
-  constructor(message: string, code = "ORGANIZE_ERROR") {
-    super(message, code);
-    this.name = "OrganizeError";
-  }
-}
-
-export function formatError(error: unknown): string {
-  if (error instanceof BundirError) {
-    return `[${error.code}] ${error.message}`;
-  }
-  if (error instanceof Error) {
-    return error.message;
-  }
+export function toErrorMessage(error: unknown): string {
+  if (error instanceof Error) return error.message;
   return String(error);
 }

@@ -1,22 +1,16 @@
 import { extname, join, parse, resolve } from "path";
-import { readdir, mkdir, rename, stat, access } from "fs/promises";
+import { readdir, mkdir, rename, stat } from "fs/promises";
 import { CONFIG_FILE_NAME, createExtensionMap, DEFAULT_CONFIG, loadConfig } from "./config";
-import { FileSystemError } from "./errors";
+import { FileSystemError, toErrorMessage } from "./errors";
 import { logger } from "./logger";
 import type { OrganizerConfig } from "./types";
 
 async function fileExists(path: string): Promise<boolean> {
   try {
-    await access(path);
+    await stat(path);
     return true;
   } catch {
     return false;
-  }
-}
-
-function validateTargetDir(dirPath: string): void {
-  if (!dirPath || dirPath.trim().length === 0) {
-    throw new FileSystemError("Target directory path cannot be empty.", ".", "FS_INVALID_PATH");
   }
 }
 
@@ -33,8 +27,7 @@ async function getAllFilePaths(dirPath: string): Promise<string[]> {
       }
     }
   } catch (error: unknown) {
-    const msg = error instanceof Error ? error.message : String(error);
-    logger.error(`Could not read directory ${dirPath}: ${msg}`);
+    logger.error(`Could not read directory ${dirPath}: ${toErrorMessage(error)}`);
   }
   return filePaths;
 }
@@ -60,11 +53,12 @@ export async function organizeCommand(path: string, cliOptions: Partial<Organize
     conflictsSkipped: 0,
     conflictsOverwritten: 0,
     conflictsRenamed: 0,
-    symlinksSkipped: 0,
     errors: 0,
   };
 
-  validateTargetDir(path);
+  if (!path || path.trim().length === 0) {
+    throw new FileSystemError("Target directory path cannot be empty.", ".", "FS_INVALID_PATH");
+  }
 
   const config = await loadConfig(cliOptions);
   const { dryRun, verbose, defaultCategory, ignoreHidden, conflictResolution, recursive } = config.options;
@@ -158,14 +152,12 @@ export async function organizeCommand(path: string, cliOptions: Partial<Organize
         }
       } catch (fileError: unknown) {
         stats.errors++;
-        const msg = fileError instanceof Error ? fileError.message : String(fileError);
-        logger.error(`Error processing ${file}: ${msg}`);
+        logger.error(`Error processing ${file}: ${toErrorMessage(fileError)}`);
       }
     }
   } catch (dirError: unknown) {
     stats.errors++;
-    const msg = dirError instanceof Error ? dirError.message : String(dirError);
-    logger.error(`Failed to read directory ${path}: ${msg}`);
+    logger.error(`Failed to read directory ${path}: ${toErrorMessage(dirError)}`);
   }
 
   const duration = (performance.now() - startTime) / 1000;
@@ -185,8 +177,7 @@ export async function organizeCommand(path: string, cliOptions: Partial<Organize
       await Bun.write(undoLogPath, JSON.stringify(moves, null, 2));
       if (verbose) logger.info(`Undo log saved to ${undoLogPath}`);
     } catch (error: unknown) {
-      const msg = error instanceof Error ? error.message : String(error);
-      logger.error(`Could not write undo log: ${msg}`);
+      logger.error(`Could not write undo log: ${toErrorMessage(error)}`);
     }
   }
 }
@@ -214,19 +205,17 @@ export async function undoCommand() {
         logger.info(`${parse(move.to).base} → ${originalDir}`);
         revertedCount++;
       } catch (error: unknown) {
-        const msg = error instanceof Error ? error.message : String(error);
-        logger.error(`Could not revert ${parse(move.to).base}: ${msg}`);
+        logger.error(`Could not revert ${parse(move.to).base}: ${toErrorMessage(error)}`);
       }
     }
 
     await Bun.file(undoLogPath).delete();
     logger.ok(`Undo complete. ${revertedCount} files moved back.`);
   } catch (error: unknown) {
-    if (error instanceof Error && (error as { code?: string }).code === "ENOENT") {
+    if (error instanceof Error && "code" in error && (error as NodeJS.ErrnoException).code === "ENOENT") {
       logger.info("No undo log found. Nothing to revert.");
     } else {
-      const msg = error instanceof Error ? error.message : String(error);
-      logger.error(`Undo failed: ${msg}`);
+      logger.error(`Undo failed: ${toErrorMessage(error)}`);
     }
   }
 }
