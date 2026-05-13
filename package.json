@@ -38,6 +38,10 @@
   "author": "AdityaZxxx",
   "license": "MIT",
   "private": false,
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/AdityaZxxx/bundir.git"
+  },
   "devDependencies": {
     "@types/bun": "latest",
     "husky": "^9.1.7",
