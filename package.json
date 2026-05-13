@@ -22,7 +22,7 @@
     "lint:fix": "oxlint --fix",
     "prepare": "husky",
     "prepublishOnly": "bun run build",
-    "test": "bun test"
+    "test": "bun test src/tests/"
   },
   "keywords": [
     "cli",

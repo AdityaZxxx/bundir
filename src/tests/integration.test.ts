@@ -7,7 +7,10 @@ import type { OrganizerConfig } from "../types";
 
 const TEST_DIR = join(process.cwd(), "test-integration-workspace");
 
-function createConfig(overrides?: Partial<OrganizerConfig>): OrganizerConfig {
+function createConfig(overrides?: {
+  options?: Partial<OrganizerConfig["options"]>;
+  categories?: Record<string, { extensions: string[]; targetDir: string }>;
+}): OrganizerConfig {
   return {
     options: {
       dryRun: false,
@@ -52,9 +55,9 @@ describe("integration - organize command", () => {
     await fs.rm(TEST_DIR, { recursive: true, force: true });
     await fs.mkdir(TEST_DIR, { recursive: true });
     await fs.writeFile(join(TEST_DIR, ".bundir.json"), JSON.stringify(createConfig(), null, 2));
-    try {
-      await fs.unlink(join(process.cwd(), ".bundir-undo.log"));
-    } catch {}
+    await Bun.file(join(process.cwd(), ".bundir-undo.log"))
+      .delete()
+      .catch(() => {});
   });
 
   afterEach(async () => {
