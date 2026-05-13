@@ -1,5 +1,4 @@
 import type { OrganizerConfig } from "./types";
-import { promises as fs } from "fs";
 import { join } from "path";
 import { homedir } from "os";
 import { ConfigError } from "./errors";
@@ -29,8 +28,12 @@ export const DEFAULT_CONFIG: OrganizerConfig = {
 };
 
 async function readConfigFile(path: string): Promise<Partial<OrganizerConfig> | null> {
+  const file = Bun.file(path);
+  const exists = await file.exists();
+  if (!exists) return null;
+
   try {
-    const configData = await fs.readFile(path, "utf-8");
+    const configData = await file.text();
     const parsed = JSON.parse(configData);
     if (parsed && typeof parsed === "object") {
       validateConfigShape(parsed, path);

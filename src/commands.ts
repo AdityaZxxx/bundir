@@ -1,5 +1,5 @@
-import { promises as fs } from "fs";
 import { extname, join, parse, resolve } from "path";
+import { readdir, mkdir, rename, stat, access } from "fs/promises";
 import { CONFIG_FILE_NAME, createExtensionMap, DEFAULT_CONFIG, loadConfig } from "./config";
 import { FileSystemError } from "./errors";
 import { logger } from "./logger";
@@ -7,7 +7,7 @@ import type { OrganizerConfig } from "./types";
 
 async function fileExists(path: string): Promise<boolean> {
   try {
-    await fs.access(path);
+    await access(path);
     return true;
   } catch {
     return false;
@@ -23,7 +23,7 @@ function validateTargetDir(dirPath: string): void {
 async function getAllFilePaths(dirPath: string): Promise<string[]> {
   const filePaths: string[] = [];
   try {
-    const entries = await fs.readdir(dirPath, { withFileTypes: true });
+    const entries = await readdir(dirPath, { withFileTypes: true });
     for (const entry of entries) {
       const fullPath = join(dirPath, entry.name);
       if (entry.isDirectory()) {
@@ -41,17 +41,17 @@ async function getAllFilePaths(dirPath: string): Promise<string[]> {
 
 export async function initCommand() {
   const configPath = join(process.cwd(), CONFIG_FILE_NAME);
-  try {
-    await fs.access(configPath);
+  const exists = await Bun.file(configPath).exists();
+  if (exists) {
     logger.warn(`Config file already exists at ${configPath}.`);
-  } catch {
-    await fs.writeFile(configPath, JSON.stringify(DEFAULT_CONFIG, null, 2));
+  } else {
+    await Bun.write(configPath, JSON.stringify(DEFAULT_CONFIG, null, 2));
     logger.ok(`Created default config file at ${configPath}`);
   }
 }
 
 export async function organizeCommand(path: string, cliOptions: Partial<OrganizerConfig["options"]>) {
-  const startTime = Date.now();
+  const startTime = performance.now();
   const moves: { from: string; to: string }[] = [];
   const stats = {
     filesProcessed: 0,
@@ -88,7 +88,7 @@ export async function organizeCommand(path: string, cliOptions: Partial<Organize
     if (recursive) {
       filesToProcess = await getAllFilePaths(absoluteBasePath);
     } else {
-      const entries = await fs.readdir(absoluteBasePath, { withFileTypes: true });
+      const entries = await readdir(absoluteBasePath, { withFileTypes: true });
       filesToProcess = entries
         .filter((e) => !e.isDirectory() && !e.isSymbolicLink())
         .map((e) => join(absoluteBasePath, e.name));
@@ -100,7 +100,7 @@ export async function organizeCommand(path: string, cliOptions: Partial<Organize
       if (ignoreHidden && file.startsWith(".")) continue;
 
       try {
-        const fileStat = await fs.stat(filePath);
+        const fileStat = await stat(filePath);
         if (fileStat.isDirectory()) continue;
 
         const ext = extname(file).toLowerCase();
@@ -109,7 +109,7 @@ export async function organizeCommand(path: string, cliOptions: Partial<Organize
         const targetDir = join(fileDir, targetDirName);
 
         if (!createdDirs.has(targetDir)) {
-          await fs.mkdir(targetDir, { recursive: true });
+          await mkdir(targetDir, { recursive: true });
           stats.directoriesCreated++;
           createdDirs.add(targetDir);
         }
@@ -121,7 +121,7 @@ export async function organizeCommand(path: string, cliOptions: Partial<Organize
           const destinationExists = await fileExists(newFilePath);
 
           if (!destinationExists) {
-            await fs.rename(filePath, newFilePath);
+            await rename(filePath, newFilePath);
             moves.push({ from: filePath, to: newFilePath });
             stats.filesMoved++;
           } else if (conflictResolution === "skip") {
@@ -131,7 +131,7 @@ export async function organizeCommand(path: string, cliOptions: Partial<Organize
           } else if (conflictResolution === "overwrite") {
             stats.conflictsOverwritten++;
             if (verbose) logger.info(`[overwrite] ${file} in ${targetDirName}.`);
-            await fs.rename(filePath, newFilePath);
+            await rename(filePath, newFilePath);
             moves.push({ from: filePath, to: newFilePath });
             stats.filesMoved++;
           } else if (conflictResolution === "rename") {
@@ -146,7 +146,7 @@ export async function organizeCommand(path: string, cliOptions: Partial<Organize
             } while (await fileExists(renamedFilePath));
 
             if (verbose) logger.info(`[rename] ${file} → ${parse(renamedFilePath).base}`);
-            await fs.rename(filePath, renamedFilePath);
+            await rename(filePath, renamedFilePath);
             moves.push({ from: filePath, to: renamedFilePath });
             stats.filesMoved++;
           }
@@ -168,7 +168,7 @@ export async function organizeCommand(path: string, cliOptions: Partial<Organize
     logger.error(`Failed to read directory ${path}: ${msg}`);
   }
 
-  const duration = (Date.now() - startTime) / 1000;
+  const duration = (performance.now() - startTime) / 1000;
   logger.header("Organization Complete");
   logger.dim(`Processed:      ${stats.filesProcessed} files`);
   logger.dim(`Moved:          ${stats.filesMoved} files`);
@@ -182,7 +182,7 @@ export async function organizeCommand(path: string, cliOptions: Partial<Organize
   if (moves.length > 0 && !dryRun) {
     try {
       const undoLogPath = join(process.cwd(), ".bundir-undo.log");
-      await fs.writeFile(undoLogPath, JSON.stringify(moves, null, 2));
+      await Bun.write(undoLogPath, JSON.stringify(moves, null, 2));
       if (verbose) logger.info(`Undo log saved to ${undoLogPath}`);
     } catch (error: unknown) {
       const msg = error instanceof Error ? error.message : String(error);
@@ -195,7 +195,7 @@ export async function undoCommand() {
   const undoLogPath = join(process.cwd(), ".bundir-undo.log");
 
   try {
-    const logData = await fs.readFile(undoLogPath, "utf-8");
+    const logData = await Bun.file(undoLogPath).text();
     const moves: { from: string; to: string }[] = JSON.parse(logData);
 
     if (!Array.isArray(moves) || moves.length === 0) {
@@ -209,8 +209,8 @@ export async function undoCommand() {
     for (const move of moves.slice().toReversed()) {
       try {
         const originalDir = parse(move.from).dir;
-        await fs.mkdir(originalDir, { recursive: true });
-        await fs.rename(move.to, move.from);
+        await mkdir(originalDir, { recursive: true });
+        await rename(move.to, move.from);
         logger.info(`${parse(move.to).base} → ${originalDir}`);
         revertedCount++;
       } catch (error: unknown) {
@@ -219,10 +219,10 @@ export async function undoCommand() {
       }
     }
 
-    await fs.unlink(undoLogPath);
+    await Bun.file(undoLogPath).delete();
     logger.ok(`Undo complete. ${revertedCount} files moved back.`);
   } catch (error: unknown) {
-    if (error instanceof Error && "code" in error && (error as NodeJS.ErrnoException).code === "ENOENT") {
+    if (error instanceof Error && (error as { code?: string }).code === "ENOENT") {
       logger.info("No undo log found. Nothing to revert.");
     } else {
       const msg = error instanceof Error ? error.message : String(error);
