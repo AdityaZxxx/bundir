@@ -15,7 +15,7 @@
   ],
   "scripts": {
     "start": "bun src/index.ts",
-    "build": "tsc",
+    "build": "bun build ./src/index.ts --outdir ./dist --target bun",
     "format": "oxfmt --write",
     "format:check": "oxfmt --check",
     "lint": "oxlint",

@@ -33,26 +33,25 @@ describe("organizeCommand", () => {
     // --- Setup ---
     await fs.writeFile(join(TEST_DIR, "image.png"), "");
     await fs.writeFile(join(TEST_DIR, "document.pdf"), "");
-    await fs.writeFile(join(TEST_DIR, "archive.zip"), ""); // Should go to 'others'
+    await fs.writeFile(join(TEST_DIR, "archive.zip"), "");
+    await fs.writeFile(join(TEST_DIR, "unknown.xyz"), ""); // Should go to 'others'
 
-    // --- Execute ---
-    // organizeCommand will now use the mocked loadConfig from the spy
     await organizeCommand(TEST_DIR, {});
 
-    // --- Assert ---
     const imagePath = join(TEST_DIR, "media/images", "image.png");
     const docPath = join(TEST_DIR, "documents", "document.pdf");
-    const otherPath = join(TEST_DIR, "others", "archive.zip");
+    const archivePath = join(TEST_DIR, "archives", "archive.zip");
+    const otherPath = join(TEST_DIR, "others", "unknown.xyz");
 
-    // A slightly cleaner way to check for file existence
     expect(await fs.exists(imagePath)).toBe(true);
     expect(await fs.exists(docPath)).toBe(true);
+    expect(await fs.exists(archivePath)).toBe(true);
     expect(await fs.exists(otherPath)).toBe(true);
 
-    // Check if original files were removed
     expect(await fs.exists(join(TEST_DIR, "image.png"))).toBe(false);
     expect(await fs.exists(join(TEST_DIR, "document.pdf"))).toBe(false);
     expect(await fs.exists(join(TEST_DIR, "archive.zip"))).toBe(false);
+    expect(await fs.exists(join(TEST_DIR, "unknown.xyz"))).toBe(false);
   });
 
   it("should skip files when conflictResolution is 'skip' and destination exists", async () => {

@@ -31,8 +31,11 @@ jobs:
       - name: Lint
         run: bun run lint
 
+      - name: Type check
+        run: bun run typecheck
+
       - name: Run tests
-        run: bun test
+        run: bun test src/tests/
 
       - name: Build
         run: bun run build
