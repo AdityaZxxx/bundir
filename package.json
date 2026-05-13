@@ -22,7 +22,8 @@
     "lint:fix": "oxlint --fix",
     "prepare": "husky",
     "prepublishOnly": "bun run build",
-    "test": "bun test src/tests/"
+    "test": "bun test src/tests/",
+    "typecheck": "tsc --noEmit"
   },
   "keywords": [
     "cli",
