@@ -30,8 +30,10 @@ jobs:
       - name: Build
         run: bun run build
 
-      - name: Setup latest npm
-        run: npm install -g npm@latest
+      - name: Setup Node.js for npm publish
+        uses: actions/setup-node@v4
+        with:
+          node-version: "latest"
 
       - name: Publish to npm with provenance
         run: npm publish --provenance --access public
