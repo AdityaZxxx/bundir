@@ -30,13 +30,10 @@ jobs:
       - name: Build
         run: bun run build
 
-      - name: Setup Node.js for npm publish
-        uses: actions/setup-node@v4
-        with:
-          node-version: "latest"
-          registry-url: "https://registry.npmjs.org"
+      - name: Setup latest npm
+        run: npm install -g npm@latest
 
-      - name: Publish to npm
+      - name: Publish to npm with provenance
         run: npm publish --provenance --access public
 
       - name: Create GitHub Release
